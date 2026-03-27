@@ -1,153 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>Work Zone Launcher</title>
-
-  <!-- Microsoft Teams SDK -->
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
-
+  https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.jsscript>
   <style>
-    body { font-family: Segoe UI, Arial, sans-serif; background:#f5f5f5; margin:0; padding:24px; }
-    .container { max-width:520px; margin:80px auto; background:#fff; padding:32px; border-radius:6px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.15); text-align:center; }
-    button { padding:12px 24px; font-size:15px; cursor:pointer; }
-    .status { margin-top:16px; font-size:13px; color:#666; }
+    body { font-family: Segoe UI, Arial; padding: 24px; }
+    button { padding: 12px 20px; font-size: 14px; cursor: pointer; }
   </style>
 </head>
-
 <body>
-  <div class="container">
-    <h2>SAP Work Zone</h2>
-
-    <button id="launchBtn" onclick="handleLaunch()" disabled>
-      Go to Work Zone
-    </button>
-
-    <div class="status" id="status">Initializing…</div>
-  </div>
+  <h3>SAP Work Zone</h3>
+  <button id="goBtn" onclick="go()">Go to Work Zone</button>
+  <p id="msg">Click to open. You may be prompted to sign in.</p>
 
   <script>
-    /**********************************************************
-     * CONFIG
-     **********************************************************/
-    const WORKZONE_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
-    const IAS_LOGIN_URL = "https://<your-ias-domain>/login";
-    const BACKEND_TOKEN_VALIDATE = "/api/validate-teams-token";
+    const WORKZONE_URL = "https://<your-workzone-domain>";
 
-    // State: do NOT store tokens; only store readiness boolean.
-    let ssoReady = false;
+    microsoftTeams.app.initialize();
 
-    /**********************************************************
-     * INIT
-     **********************************************************/
-    microsoftTeams.app.initialize().then(() => {
-      setStatus("Ready. Checking session…");
-
-      // Optional: preflight SSO in the background so the click is fast.
-      // This does NOT redirect.
-      preflightTeamsSSO()
-        .then(() => {
-          ssoReady = true;
-          setStatus("Session ready. Click 'Go to Work Zone'.");
-          enableButton(true);
-        })
-        .catch(() => {
-          ssoReady = false;
-          setStatus("Click 'Go to Work Zone'. You may be asked to sign in.");
-          enableButton(true);
-        });
-    });
-
-    /**********************************************************
-     * PRE-FLIGHT SSO (NO NAVIGATION)
-     * Uses Teams token cache; backend validates.
-     **********************************************************/
-    function preflightTeamsSSO() {
-      // Note: Teams caches tokens; best practice is to call when needed.
-      // We use this as a convenience preflight, not as an auto-navigation trigger.
-      return microsoftTeams.authentication.getAuthToken({ silent: true })
-        .then(token => validateTokenWithBackend(token));
-    }
-
-    function validateTokenWithBackend(token) {
-      return fetch(BACKEND_TOKEN_VALIDATE, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }).then(resp => {
-        if (!resp.ok) throw new Error("Token invalid");
-        return resp.json();
-      });
-    }
-
-    /**********************************************************
-     * CLICK HANDLER (ONLY PLACE WE NAVIGATE)
-     **********************************************************/
-    function handleLaunch() {
-      // Always wait for user click to navigate.
-      // If SSO is ready, go straight to Work Zone.
-      if (ssoReady) {
-        window.location.replace(WORKZONE_URL);
-        return;
-      }
-
-      // If SSO not ready, try one just-in-time attempt (still no redirect until success).
-      setStatus("Checking session…");
-      enableButton(false);
-
-      microsoftTeams.authentication.getAuthToken({ silent: true })
-        .then(token => validateTokenWithBackend(token))
-        .then(() => {
-          ssoReady = true;
-          setStatus("Session ready. Launching Work Zone…");
-          // Still user-initiated: this call is within the click flow.
-          window.location.replace(WORKZONE_URL);
-        })
-        .catch(err => {
-          console.warn("SSO not available, using interactive fallback", err);
-          ssoReady = false;
-          setStatus("Sign-in required. Opening secure sign-in…");
-          openAuthTaskModule();
-        })
-        .finally(() => {
-          // If we didn't redirect, re-enable the button.
-          enableButton(true);
-        });
-    }
-
-    /**********************************************************
-     * INTERACTIVE FALLBACK (Task Module → IAS → Entra)
-     **********************************************************/
-    function openAuthTaskModule() {
-      microsoftTeams.dialog.open(
-        {
-          title: "Sign in to Work Zone",
-          url: IAS_LOGIN_URL,
-          size: { height: 600, width: 420 }
-        },
-        result => {
-          // After sign-in, we don't auto-redirect.
-          // We simply re-check readiness and let the user click again,
-          // or you can choose to set ssoReady true and update status.
-          setStatus("Sign-in complete. Click 'Go to Work Zone'.");
-          ssoReady = true; // optimistic; the next click will still re-validate if needed
-          enableButton(true);
-        }
-      );
-    }
-
-    /**********************************************************
-     * UI HELPERS
-     **********************************************************/
-    function setStatus(text) {
-      document.getElementById("status").innerText = text;
-    }
-    function enableButton(enabled) {
-      document.getElementById("launchBtn").disabled = !enabled;
+    function go() {
+      // Only navigate on user click
+      window.location.href = WORKZONE_URL;
     }
   </script>
 </body>
 </html>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Work Zone Launcher</title>
+  https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js</script>
+  <style>
+    body { font-family: Segoe UI, Arial; padding: 24px; }
+    button { padding: 12px 20px; font-size: 14px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h3>SAP Work Zone</h3>
+  <button id="goBtn" onclick="go()">Go to Work Zone</button>
+  <p id="msg"></p>
+
+  <script>
+    const WORKZONE_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
+    const BACKEND_TOKEN_VALIDATE = "/api/validate-teams-token";
+
+    microsoftTeams.app.initialize();
+
+    async function go() {
+      setMsg("Checking session…");
+
+      try {
+        const token = await microsoftTeams.authentication.getAuthToken({ silent: true });
+
+        const resp = await fetch(BACKEND_TOKEN_VALIDATE, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!resp.ok) throw new Error("not-valid");
+
+        setMsg("Launching…");
+        window.location.href = WORKZONE_URL;   // redirect only after click
+      } catch (e) {
+        // If token not available, do NOT loop; just go to Work Zone (IAS handles sign-in)
+        setMsg("Launching… you may be asked to sign in.");
+        window.location.href = WORKZONE_URL;
+      }
+    }
+
+    function setMsg(t) { document.getElementById("msg").innerText = t; }
+  </script>
+</body>
+</html>
+
