@@ -1,45 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Redirecting...</title>
-
-  <!-- This gets updated by JS immediately; kept here as a placeholder -->
-  <meta id="metaRefresh" http-equiv="refresh" content="0;url=about:blank">
+  <meta charset="UTF-8" />
+  <title>Opening SAP Inbox...</title>
 
   <script>
-    (function () {
-      var cb = "cb=" + Date.now();
+    // 🔧 CONFIG — Put your real Fiori Inbox URL here
+    const FIORI_URL = "https://your-domain.workzone.site/shell#MyInbox-display";
 
-      var baseUrl  = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2";
-      var hashRoute = "#WorkflowTask-displayInbox?allItems=true&sap-ui-app-id-hint=px2100";
+    // Open Fiori Inbox in new tab / top window
+    function openInbox() {
+      try {
+        const newWindow = window.open(FIORI_URL, "_blank", "noopener,noreferrer");
+        if (!newWindow) {
+          // Popup blocked fallback
+          top.location.href = FIORI_URL;
+        }
+      } catch (e) {
+        // Hard fallback
+        top.location.href = FIORI_URL;
+      }
+    }
 
-      // IMPORTANT: cache-buster must be BEFORE the '#'
-      var redirectUrl = baseUrl + "?" + cb + hashRoute;
+    // Check if user is on login page / session expired
+    function checkAuth() {
+      const url = window.location.href.toLowerCase();
+      if (url.includes("login") || url.includes("auth")) {
+        try {
+          if (window.top !== window.self) {
+            // Escape iframe and reload top-level
+            window.top.location.href = FIORI_URL;
+          } else {
+            window.location.href = FIORI_URL;
+          }
+        } catch (e) {
+          window.location.href = FIORI_URL;
+        }
+      }
+    }
 
-      // Update meta refresh to the SAME cache-busted URL
-      var meta = document.getElementById("metaRefresh");
-      if (meta) meta.setAttribute("content", "0;url=" + redirectUrl);
+    // Run on load
+    window.onload = function () {
+      // Launch Fiori Inbox immediately
+      openInbox();
 
-      // Update the fallback link too
-      var link = document.getElementById("redirectLink");
-      var text = document.getElementById("redirectText");
-      if (link) link.href = redirectUrl;
-      if (text) text.textContent = redirectUrl;
+      // Force top-level navigation in case Teams iframe interferes
+      if (window.top !== window.self) {
+        window.top.location.href = FIORI_URL;
+      }
 
-      // Do the redirect
-      window.location.replace(redirectUrl);
-    })();
+      // Periodically check for expired session / login page
+      setInterval(checkAuth, 5000);
+
+      // Backup: refresh every 25 minutes to prevent timeout
+      setTimeout(() => {
+        if (window.top !== window.self) {
+          window.top.location.href = FIORI_URL;
+        } else {
+          window.location.href = FIORI_URL;
+        }
+      }, 1000 * 60 * 25);
+    };
   </script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f3f2f1;
+    }
+    .box {
+      text-align: center;
+      padding: 30px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .spinner {
+      margin: 20px auto;
+      width: 30px;
+      height: 30px;
+      border: 4px solid #ddd;
+      border-top: 4px solid #0078d4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    a {
+      display: inline-block;
+      margin-top: 15px;
+      color: #0078d4;
+      text-decoration: none;
+      font-weight: 500;
+    }
+  </style>
 </head>
 
 <body>
-  <p>
-    If you are not redirected automatically, please follow this link:
-    about:blankOpen Inbox</a>
-  </p>
-  <p style="word-break: break-all;">
-    <span id="redirectText"></span>
-  </p>
+  <div class="box">
+    <h2>Opening SAP Inbox...</h2>
+    <div class="spinner"></div>
+
+    <!-- Manual fallback -->
+    <a href="https://your-domain.workzone.site/shell#MyInbox-display" target="_blank">
+      Click here if nothing happens
+    </a>
+  </div>
 </body>
 </html>
