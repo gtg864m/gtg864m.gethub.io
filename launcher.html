@@ -1,1 +1,76 @@
+<script>
+  const WORKZONE_URL =
+    "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
 
+  const IAS_LOGIN_URL =
+    "https://ao16xfgoy.accounts.ondemand.com";
+
+  const status = document.getElementById("status");
+
+  let teamsReady = false;
+
+  // ✅ Wait for Teams to initialize
+  microsoftTeams.app.initialize().then(() => {
+    teamsReady = true;
+    status.innerText = "Ready.";
+  }).catch(err => {
+    status.innerText = "Teams initialization failed.";
+    console.error(err);
+  });
+
+  function launchWorkZone() {
+    window.open(WORKZONE_URL, "_self");
+  }
+
+  function signIn() {
+    if (!teamsReady) {
+      status.innerText = "Teams not ready yet.";
+      return;
+    }
+
+    // ✅ Preferred path (TeamsJS v2)
+    if (microsoftTeams.dialog?.url?.open) {
+      status.innerText = "Opening sign‑in dialog…";
+
+      microsoftTeams.dialog.url.open(
+        {
+          title: "Sign in to SAP Work Zone",
+          url: IAS_LOGIN_URL,
+          size: { height: 600, width: 420 }
+        },
+        (err) => {
+          if (err) {
+            status.innerText = "Sign‑in dialog closed or blocked.";
+            console.error(err);
+          } else {
+            status.innerText =
+              "Sign‑in completed. Click 'Open Work Zone'.";
+          }
+        }
+      );
+      return;
+    }
+
+    // ✅ Fallback for older hosts
+    if (microsoftTeams.tasks?.startTask) {
+      status.innerText = "Opening sign‑in dialog (fallback)…";
+
+      microsoftTeams.tasks.startTask(
+        {
+          title: "Sign in to SAP Work Zone",
+          url: IAS_LOGIN_URL,
+          height: 600,
+          width: 420
+        },
+        () => {
+          status.innerText =
+            "Sign‑in completed. Click 'Open Work Zone'.";
+        }
+      );
+      return;
+    }
+
+    status.innerText =
+      "Sign‑in dialog API not available in this Teams host.";
+  }
+</script>
