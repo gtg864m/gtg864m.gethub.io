@@ -15,7 +15,7 @@
   <p id="msg">Click to open. You may be prompted to sign in.</p>
 
   <script>
-    const WORKZONE_URL = "https://<your-workzone-domain>";
+    const WORKZONE_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
 
     microsoftTeams.app.initialize();
 
@@ -26,53 +26,4 @@
   </script>
 </body>
 </html>
-
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Work Zone Launcher</title>
-  https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js</script>
-  <style>
-    body { font-family: Segoe UI, Arial; padding: 24px; }
-    button { padding: 12px 20px; font-size: 14px; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h3>SAP Work Zone</h3>
-  <button id="goBtn" onclick="go()">Go to Work Zone</button>
-  <p id="msg"></p>
-
-  <script>
-    const WORKZONE_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
-    const BACKEND_TOKEN_VALIDATE = "/api/validate-teams-token";
-
-    microsoftTeams.app.initialize();
-
-    async function go() {
-      setMsg("Checking session…");
-
-      try {
-        const token = await microsoftTeams.authentication.getAuthToken({ silent: true });
-
-        const resp = await fetch(BACKEND_TOKEN_VALIDATE, {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        if (!resp.ok) throw new Error("not-valid");
-
-        setMsg("Launching…");
-        window.location.href = WORKZONE_URL;   // redirect only after click
-      } catch (e) {
-        // If token not available, do NOT loop; just go to Work Zone (IAS handles sign-in)
-        setMsg("Launching… you may be asked to sign in.");
-        window.location.href = WORKZONE_URL;
-      }
-    }
-
-    function setMsg(t) { document.getElementById("msg").innerText = t; }
-  </script>
-</body>
-</html>
-
+``
