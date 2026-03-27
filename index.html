@@ -1,12 +1,8 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
   <title>Work Zone Launcher</title>
-
-  <!-- ✅ FIXED Teams SDK -->
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 
   <style>
     body {
@@ -24,25 +20,16 @@
 <body>
   <h3>SAP Work Zone</h3>
 
-  <button id="goBtn" onclick="go()">
-    Go to Work Zone
-  </button>
+  <button onclick="go()">Go to Work Zone</button>
 
-  <p id="msg">
-    Click to open. You may be prompted to sign in.
-  </p>
+  <p>Click to open. You may be prompted to sign in.</p>
 
   <script>
-    const WORKZONE_URL =
-      "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
-
-    // ✅ SAFE initialize (won’t break button)
-    if (window.microsoftTeams?.app) {
-      microsoftTeams.app.initialize().catch(() => {});
-    }
-
     function go() {
-      window.location.href = WORKZONE_URL;
+      window.open(
+        "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home",
+        "_self"
+      );
     }
   </script>
 </body>
