@@ -2,17 +2,21 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Work Zone Launcher</title>
+  <title>SAP Work Zone Launcher</title>
+
+  <!-- Microsoft Teams SDK (REQUIRED) -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 
   <style>
     body {
-      font-family: Segoe UI, Arial;
+      font-family: Segoe UI, Arial, sans-serif;
       padding: 24px;
     }
     button {
       padding: 12px 20px;
       font-size: 14px;
       cursor: pointer;
+      margin-right: 10px;
     }
   </style>
 </head>
@@ -20,15 +24,43 @@
 <body>
   <h3>SAP Work Zone</h3>
 
-  <button onclick="go()">Go to Work Zone</button>
+  <button onclick="launchWorkZone()">Open Work Zone</button>
+  <button onclick="signIn()">Sign in</button>
 
-  <p>Click to open. You may be prompted to sign in.</p>
+  <p id="status">
+    If sign‑in is blocked in the page, use <b>Sign in</b>.
+  </p>
 
   <script>
-    function go() {
-      window.open(
-        "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home",
-        "_self"
+    // ✅ Your Work Zone URL
+    const WORKZONE_URL =
+      "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
+
+    // ✅ CONFIRMED IAS tenant URL
+    const IAS_LOGIN_URL =
+      "https://ao16xfgoy.accounts.ondemand.com";
+
+    // Initialize Teams SDK safely
+    microsoftTeams.app.initialize().catch(() => {});
+
+    function launchWorkZone() {
+      // Loads Work Zone inside the Teams tab
+      window.open(WORKZONE_URL, "_self");
+    }
+
+    function signIn() {
+      // ✅ Case 2: IAS → Entra inside Teams dialog
+      microsoftTeams.dialog.url.open(
+        {
+          title: "Sign in to SAP Work Zone",
+          url: IAS_LOGIN_URL,
+          size: { height: 600, width: 420 }
+        },
+        () => {
+          // After dialog closes, user can reload Work Zone
+          document.getElementById("status").innerText =
+            "Sign‑in completed. Click 'Open Work Zone'.";
+        }
       );
     }
   </script>
