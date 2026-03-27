@@ -1,28 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting...</title>
-    <script type="text/javascript">
-        (function () {
-            // Cache buster using current timestamp
-            var cacheBuster = "cb=" + new Date().getTime();
+  <meta charset="utf-8" />
+  <title>Redirecting...</title>
 
-            var baseUrl = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2";
-            var hashRoute = "#WorkflowTask-displayInbox?allItems=true&sap-ui-app-id-hint=px2100";
+  <!-- This gets updated by JS immediately; kept here as a placeholder -->
+  <meta id="metaRefresh" http-equiv="refresh" content="0;url=about:blank">
 
-            var redirectUrl = baseUrl + "?" + cacheBuster + hashRoute;
+  <script>
+    (function () {
+      var cb = "cb=" + Date.now();
 
-            window.location.replace(redirectUrl);
-        })();
-    </script>
+      var baseUrl  = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2";
+      var hashRoute = "#WorkflowTask-displayInbox?allItems=true&sap-ui-app-id-hint=px2100";
 
+      // IMPORTANT: cache-buster must be BEFORE the '#'
+      var redirectUrl = baseUrl + "?" + cb + hashRoute;
+
+      // Update meta refresh to the SAME cache-busted URL
+      var meta = document.getElementById("metaRefresh");
+      if (meta) meta.setAttribute("content", "0;url=" + redirectUrl);
+
+      // Update the fallback link too
+      var link = document.getElementById("redirectLink");
+      var text = document.getElementById("redirectText");
+      if (link) link.href = redirectUrl;
+      if (text) text.textContent = redirectUrl;
+
+      // Do the redirect
+      window.location.replace(redirectUrl);
+    })();
+  </script>
 </head>
+
 <body>
-    <p>
-        If you are not redirected automatically, please follow this
-        https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2?cb=static#WorkflowTask-displayInbox?allItems=true&sap-ui-app-id-hint=px2100
-            link
-        </a>.
-    </p>
+  <p>
+    If you are not redirected automatically, please follow this link:
+    about:blankOpen Inbox</a>
+  </p>
+  <p style="word-break: break-all;">
+    <span id="redirectText"></span>
+  </p>
 </body>
 </html>
