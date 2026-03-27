@@ -1,3 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Launching Work Zone…</title>
+
+  <!-- Microsoft Teams SDK -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
+
+  <style>
+    body {
+      font-family: Segoe UI, Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 520px;
+      margin: 80px auto;
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="ui">
+    <p>Checking your session…</p>
+  </div>
+
+  <script>
+    /**********************************************************
+     * CONFIG
+     **********************************************************/
+    const WORKZONE_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#WorkflowTask-displayInbox?allItems=true&sap-ui-app-id-hint=px2100";
+    const IAS_LOGIN_URL = "https://<your-ias-domain>/login";
+    const BACKEND_TOKEN_VALIDATE = "/api/validate-teams-token";
+
+    let teamsContext = null;
+
+    /**********************************************************
+     * ENTRY POINT
+     **********************************************************/
+    microsoftTeams.app.initialize().then(() => {
+      microsoftTeams.app.getContext().then(context => {
+        teamsContext = context;
+        attemptTeamsSSO();
+      });
+    });
+
+    /**********************************************************
+     * PRIMARY PATH – Teams SSO (only supported silent path)
+     **********************************************************/
+    function attemptTeamsSSO() {
+      microsoftTeams.authentication.getAuthToken({ silent: true })
+        .then(token => validateTokenWithBackend(token))
+        .catch(err => {
+          console.warn("Teams SSO failed", err);
+          renderSignedOut();
+        });
+    }
+
+    /**********************************************************
+     * BACKEND VALIDATION
+     * (Never pass token to IAS)
+     **********************************************************/
+    function validateTokenWithBackend(token) {
+      fetch(BACKEND_TOKEN_VALIDATE, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      })
+      .then(resp => {
+        if (!resp.ok) throw new Error("Token invalid");
+        return resp.json();
+      })
+      .then(() => launchWorkZone())
+      .catch(err => {
+        console.warn("Token validation failed", err);
+        renderSignedOut();
+      });
+    }
+
+    /**********************************************************
+     * SUCCESS PATH – Load Work Zone
+     **********************************************************/
+    function launchWorkZone() {
+      window.location.replace(WORKZONE_URL);
+    }
+
+    /**********************************************************
+     * FALLBACK UI – Resume‑Safe State
+     **********************************************************/
+    function renderSignedOut() {
+      const ui = document.getElementById("ui");
+      ui.innerHTML = `
+        <h3>Session expired</h3>
+        <p>To continue securely, please sign in again.</p>
+        <button onclick="openAuthTaskModule()">Continue</button>
+      `;
+    }
+
+    /**********************************************************
+     * INTERACTIVE FALLBACK – Task Module → IAS → Entra
+     **********************************************************/
+    function openAuthTaskModule() {
+      microsoftTeams.dialog.open(
+        {
+          title: "Sign in",
+          url: IAS_LOGIN_URL,
+          size: { height: 600, width: 400 }
+        },
+        result => {
+          if (result === "success") {
+            // Clean restart after authentication
+            window.location.reload();
+          }
+        }
+      );
+    }
+  </script>
+</body>
+</html>
 <!DOCTYPE html>
 <html lang="en">
 <head>
