@@ -4,63 +4,39 @@
   <meta charset="UTF-8" />
   <title>Opening SAP Inbox...</title>
 
+  <!-- Teams SDK -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
+
   <script>
     // 🔧 CONFIG — Put your real Fiori Inbox URL here
-    const FIORI_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#WorkflowTask-displayInbox?allItems=true&sap-ui-app-id-hint=px2100";
+    const FIORI_URL = "https://your-domain.workzone.site/shell#MyInbox-display";
 
-    // Open Fiori Inbox in new tab / top window
-    function openInbox() {
-      try {
-        const newWindow = window.open(FIORI_URL, "_blank", "noopener,noreferrer");
-        if (!newWindow) {
-          // Popup blocked fallback
-          top.location.href = FIORI_URL;
-        }
-      } catch (e) {
-        // Hard fallback
-        top.location.href = FIORI_URL;
-      }
-    }
+    // Initialize Teams SDK
+    microsoftTeams.app.initialize();
 
-    // Check if user is on login page / session expired
+    // Reload page when user comes back to the tab
+    microsoftTeams.app.registerOnResumeHandler(() => {
+      console.log("Teams tab resumed, reloading page...");
+      window.location.href = FIORI_URL;
+    });
+
+    // Function to check if the session expired (redirected to login)
     function checkAuth() {
       const url = window.location.href.toLowerCase();
       if (url.includes("login") || url.includes("auth")) {
-        try {
-          if (window.top !== window.self) {
-            // Escape iframe and reload top-level
-            window.top.location.href = FIORI_URL;
-          } else {
-            window.location.href = FIORI_URL;
-          }
-        } catch (e) {
-          window.location.href = FIORI_URL;
-        }
+        console.log("Detected login page, reloading iframe...");
+        window.location.href = FIORI_URL;
       }
     }
 
-    // Run on load
-    window.onload = function () {
-      // Launch Fiori Inbox immediately
-      openInbox();
+    // Periodically check session
+    setInterval(checkAuth, 5000);
 
-      // Force top-level navigation in case Teams iframe interferes
-      if (window.top !== window.self) {
-        window.top.location.href = FIORI_URL;
-      }
-
-      // Periodically check for expired session / login page
-      setInterval(checkAuth, 5000);
-
-      // Backup: refresh every 25 minutes to prevent timeout
-      setTimeout(() => {
-        if (window.top !== window.self) {
-          window.top.location.href = FIORI_URL;
-        } else {
-          window.location.href = FIORI_URL;
-        }
-      }, 1000 * 60 * 25);
-    };
+    // Backup: reload before SAP session timeout
+    setTimeout(() => {
+      console.log("Periodic reload before session timeout");
+      window.location.href = FIORI_URL;
+    }, 1000 * 60 * 25); // 25 minutes
   </script>
 
   <style>
@@ -108,9 +84,19 @@
     <div class="spinner"></div>
 
     <!-- Manual fallback -->
-    <a href="https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#WorkflowTask-displayInbox?allItems=true&sap-ui-app-id-hint=px2100" target="_blank">
+    <a href="https://your-domain.workzone.site/shell#MyInbox-display" target="_blank">
       Click here if nothing happens
     </a>
   </div>
+
+  <script>
+    // Initial load of Fiori inside iframe
+    window.onload = function() {
+      // Only navigate if not already inside the Fiori URL
+      if (window.location.href !== FIORI_URL) {
+        window.location.href = FIORI_URL;
+      }
+    };
+  </script>
 </body>
 </html>
