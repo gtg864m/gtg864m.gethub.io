@@ -1,29 +1,49 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
   <title>Work Zone Launcher</title>
-  https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.jsscript>
+
+  <!-- ✅ FIXED Teams SDK -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
+
   <style>
-    body { font-family: Segoe UI, Arial; padding: 24px; }
-    button { padding: 12px 20px; font-size: 14px; cursor: pointer; }
+    body {
+      font-family: Segoe UI, Arial;
+      padding: 24px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
   <h3>SAP Work Zone</h3>
-  <button id="goBtn" onclick="go()">Go to Work Zone</button>
-  <p id="msg">Click to open. You may be prompted to sign in.</p>
+
+  <button id="goBtn" onclick="go()">
+    Go to Work Zone
+  </button>
+
+  <p id="msg">
+    Click to open. You may be prompted to sign in.
+  </p>
 
   <script>
-    const WORKZONE_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
+    const WORKZONE_URL =
+      "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
 
-    microsoftTeams.app.initialize();
+    // ✅ SAFE initialize (won’t break button)
+    if (window.microsoftTeams?.app) {
+      microsoftTeams.app.initialize().catch(() => {});
+    }
 
     function go() {
-      // Only navigate on user click
       window.location.href = WORKZONE_URL;
     }
   </script>
 </body>
 </html>
-``
