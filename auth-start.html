@@ -1,22 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Auth Complete</title>
-  https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.jsscript>
+  <title>Auth Start</title>
+  <script src="https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  Completing sign-in…
+  Redirecting…
   <script>
-    (async () => {
-      try {
-        await microsoftTeams.app.initialize();
-        // Send anything useful back to the parent if you want (or just "ok")
-        microsoftTeams.authentication.notifySuccess("ok");
-      } catch (e) {
-        microsoftTeams.authentication.notifyFailure(e?.message || "Auth failed");
-      }
-    })();
+    const DEFAULT_TARGET = "https://lxu.workzone.cfapps.us10.hana.ondemand.com/site#workzone-home&/home";
+    const params = new URLSearchParams(location.search);
+    const target = params.get("target") ? decodeURIComponent(params.get("target")) : DEFAULT_TARGET;
+
+    // For “popup opens?” testing, just redirect:
+    window.location.replace(target);
   </script>
 </body>
 </html>
