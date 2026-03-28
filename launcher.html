@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <title>SAP Work Zone Launcher</title>
 
-  <!-- ✅ Microsoft Teams SDK (MUST be loaded before your script) -->
-  https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.jsscript>
+  <!-- ✅ Microsoft Teams SDK (CORRECT script tag) -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 
   <style>
     body {
@@ -41,37 +41,41 @@
       const statusEl = document.getElementById("status");
       const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
 
-      // ✅ Guard: SDK not loaded
+      // ✅ Guard: Teams SDK must exist
       if (!window.microsoftTeams || !microsoftTeams.app?.initialize) {
-        setStatus("Teams SDK not loaded (running outside Teams).");
+        setStatus("Not running inside Teams (browser mode).");
         return;
       }
 
       let teamsReady = false;
 
-      // ✅ Initialize Teams (only succeeds inside Teams)
+      // ✅ Initialize Teams (only resolves inside Teams)
       microsoftTeams.app.initialize()
         .then(() => {
           teamsReady = true;
           setStatus("Ready.");
         })
         .catch(() => {
-          // Expected when opened in a normal browser
-          setStatus("Not running inside Teams.");
+          // Expected in normal browser
+          setStatus("Not running inside Teams (browser mode).");
         });
 
-      // ✅ Expose functions for button handlers
+      // ✅ Open Work Zone
       window.launchWorkZone = function () {
         window.location.href = WORKZONE_URL;
       };
 
+      // ✅ Sign‑in logic (Teams + browser fallback)
       window.signIn = function () {
+
+        // Browser fallback
         if (!teamsReady) {
-          setStatus("Teams not ready yet.");
+          setStatus("Browser sign‑in…");
+          window.location.href = IAS_LOGIN_URL;
           return;
         }
 
-        // ✅ Preferred: TeamsJS v2 dialog
+        // Teams dialog (preferred)
         if (microsoftTeams.dialog?.url?.open) {
           setStatus("Opening sign‑in dialog…");
 
@@ -93,7 +97,7 @@
           return;
         }
 
-        // ✅ Fallback for older Teams hosts
+        // Older Teams fallback
         if (microsoftTeams.tasks?.startTask) {
           setStatus("Opening sign‑in dialog (fallback)…");
 
