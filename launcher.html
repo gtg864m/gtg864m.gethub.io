@@ -4,23 +4,12 @@
   <meta charset="utf-8" />
   <title>SAP Work Zone Launcher</title>
 
-  <!-- ✅ Microsoft Teams JS SDK (v2.x – CORRECT) -->
-  <script
-    src="https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.js"
-    crossorigin="anonymous">
-  </script>
+  <!-- TeamsJS v2.x (keep simple; add integrity later if you want) -->
+  <script src="https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
 
   <style>
-    body {
-      font-family: Segoe UI, Arial, sans-serif;
-      padding: 24px;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 14px;
-      margin-right: 10px;
-      cursor: pointer;
-    }
+    body { font-family: Segoe UI, Arial, sans-serif; padding: 24px; }
+    button { padding: 12px 20px; font-size: 14px; margin-right: 10px; cursor: pointer; }
   </style>
 </head>
 
@@ -42,64 +31,40 @@
         "https://ao16xfgoy.accounts.ondemand.com";
 
       const statusEl = document.getElementById("status");
-      const setStatus = (msg) => {
-        if (statusEl) statusEl.innerText = msg;
-      };
+      const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
 
-      // ✅ Guard: SDK must be present
+      let inTeams = false;
+
+      // Guard: SDK loaded?
       if (!window.microsoftTeams || !microsoftTeams.app?.initialize) {
         setStatus("Teams SDK not loaded (browser mode).");
-        return;
+      } else {
+        // Try initialize. If it resolves, we are in Teams.
+        microsoftTeams.app.initialize()
+          .then(() => {
+            inTeams = true;
+            setStatus("Ready (Teams).");
+          })
+          .catch(() => {
+            setStatus("Ready (browser).");
+          });
       }
 
-      let teamsReady = false;
-
-      // ✅ Initialize Teams (only resolves inside Teams)
-      microsoftTeams.app.initialize()
-        .then(() => {
-          teamsReady = true;
-          setStatus("Ready.");
-        })
-        .catch(() => {
-          // Expected in normal browser
-          setStatus("Not running inside Teams (browser mode).");
-        });
-
-      // ✅ Open Work Zone
       window.launchWorkZone = function () {
         window.location.href = WORKZONE_URL;
       };
 
-      // ✅ Sign‑in logic (New Teams safe)
       window.signIn = function () {
-
-        // Browser fallback
-        if (!teamsReady) {
-          setStatus("Browser sign‑in…");
-          window.location.href = IAS_LOGIN_URL;
+        // ✅ If in Teams, use openLink (works even when dialog APIs are unavailable)
+        if (inTeams && microsoftTeams.app?.openLink) {
+          setStatus("Opening sign-in in Teams browser…");
+          microsoftTeams.app.openLink(IAS_LOGIN_URL);
           return;
         }
 
-        // ✅ Preferred: dialog if supported
-        if (microsoftTeams.dialog?.url?.isSupported()) {
-          setStatus("Opening sign‑in dialog…");
-
-          microsoftTeams.dialog.url.open(
-            {
-              title: "Sign in to SAP Work Zone",
-              url: IAS_LOGIN_URL,
-              size: { height: 600, width: 420 }
-            },
-            () => {
-              setStatus("Sign‑in completed. Click 'Open Work Zone'.");
-            }
-          );
-          return;
-        }
-
-        // ✅ New Teams fallback (this fixes your current error)
-        setStatus("Opening sign‑in in Teams browser…");
-        microsoftTeams.app.openLink(IAS_LOGIN_URL);
+        // ✅ Browser fallback
+        setStatus("Opening sign-in…");
+        window.location.href = IAS_LOGIN_URL;
       };
 
     });
