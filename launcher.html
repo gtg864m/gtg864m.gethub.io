@@ -1,124 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>SAP Work Zone Launcher</title>
-
-  <!-- ✅ Microsoft Teams SDK (CORRECT script tag) -->
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
-
-  <style>
-    body {
-      font-family: Segoe UI, Arial, sans-serif;
-      padding: 24px;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 14px;
-      margin-right: 10px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-
-<body>
-  <h3>SAP Work Zone</h3>
-
-  <button onclick="launchWorkZone()">Open Work Zone</button>
-  <button onclick="signIn()">Sign in</button>
-
-  <p id="status">Initializing…</p>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-
-      const WORKZONE_URL =
-        "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
-
-      const IAS_LOGIN_URL =
-        "https://ao16xfgoy.accounts.ondemand.com";
-
-      const statusEl = document.getElementById("status");
-      const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
-
-      // ✅ Guard: Teams SDK must exist
-      if (!window.microsoftTeams || !microsoftTeams.app?.initialize) {
-        setStatus("Not running inside Teams (browser mode).");
-        return;
-      }
-
-      let teamsReady = false;
-
-      // ✅ Initialize Teams (only resolves inside Teams)
-      microsoftTeams.app.initialize()
-        .then(() => {
-          teamsReady = true;
-          setStatus("Ready.");
-        })
-        .catch(() => {
-          // Expected in normal browser
-          setStatus("Not running inside Teams (browser mode).");
+    <link rel="stylesheet" type="text/css" href="/styles/msteams-16.css"/>
+    <link rel="stylesheet" type="text/css" href="/styles/custom.css"/>
+    <script
+          src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"
+          integrity="sha384-QtTBFeFlfRDZBfwHJHYQp7MdLJ2C3sfAEB1Qpy+YblvjavBye+q87TELpTnvlXw4"
+          crossorigin="anonymous">
+    </script>
+    <script>
+        microsoftTeams.app.initialize().then(() => {
         });
-
-      // ✅ Open Work Zone
-      window.launchWorkZone = function () {
-        window.location.href = WORKZONE_URL;
-      };
-
-      // ✅ Sign‑in logic (Teams + browser fallback)
-      window.signIn = function () {
-
-        // Browser fallback
-        if (!teamsReady) {
-          setStatus("Browser sign‑in…");
-          window.location.href = IAS_LOGIN_URL;
-          return;
-        }
-
-        // Teams dialog (preferred)
-        if (microsoftTeams.dialog?.url?.open) {
-          setStatus("Opening sign‑in dialog…");
-
-          microsoftTeams.dialog.url.open(
-            {
-              title: "Sign in to SAP Work Zone",
-              url: IAS_LOGIN_URL,
-              size: { height: 600, width: 420 }
-            },
-            (err) => {
-              if (err) {
-                setStatus("Sign‑in dialog closed or blocked.");
-                console.error(err);
-              } else {
-                setStatus("Sign‑in completed. Click 'Open Work Zone'.");
-              }
-            }
-          );
-          return;
-        }
-
-        // Older Teams fallback
-        if (microsoftTeams.tasks?.startTask) {
-          setStatus("Opening sign‑in dialog (fallback)…");
-
-          microsoftTeams.tasks.startTask(
-            {
-              title: "Sign in to SAP Work Zone",
-              url: IAS_LOGIN_URL,
-              height: 600,
-              width: 420
-            },
-            () => {
-              setStatus("Sign‑in completed. Click 'Open Work Zone'.");
-            }
-          );
-          return;
-        }
-
-        setStatus("Dialog API not available in this Teams host.");
-      };
-
-    });
-  </script>
+        function createLink() {
+            var appId =  "<%-microsoftAppId%>";
+            var baseUrl =  "<%-baseUrl%>";
+            // Passing the values and encoding the url while implementing the deeplink from tab
+            let url = "https://teams.microsoft.com/l/stage/"+appId+"/0?context={\"contentUrl\":\""+baseUrl+"/content\",\"websiteUrl\":\""+baseUrl+"/content\",\"name\":\"DemoStageView\"}";
+            alert("URL - " + url);
+            microsoftTeams.app.openLink(url);
+        };
+    </script>
+</head>
+<body class="theme-light">
+    <div class="surface">
+        <div class="panel">
+            <div>
+                <label for="tabChoice"></label>Click on the button to view the stage view from deeplink:
+                <button onClick="createLink()">Execute deeplink</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
