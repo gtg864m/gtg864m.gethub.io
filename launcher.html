@@ -28,8 +28,7 @@
 
       // IMPORTANT: This should be a page YOU host (same origin as this launcher),
       // which then redirects to IAS login and ends at auth-end.html that calls notifySuccess().
-      const AUTH_START_URL =
-        window.location.origin + "/auth-start.html?target=" + encodeURIComponent(WORKZONE_URL);
+      const AUTH_START_URL = encodeURIComponent(WORKZONE_URL);
 
       const statusEl = document.getElementById("status");
       const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
