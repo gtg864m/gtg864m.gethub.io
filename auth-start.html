@@ -1,1 +1,22 @@
-
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Auth Complete</title>
+  https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.jsscript>
+</head>
+<body>
+  Completing sign-in…
+  <script>
+    (async () => {
+      try {
+        await microsoftTeams.app.initialize();
+        // Send anything useful back to the parent if you want (or just "ok")
+        microsoftTeams.authentication.notifySuccess("ok");
+      } catch (e) {
+        microsoftTeams.authentication.notifyFailure(e?.message || "Auth failed");
+      }
+    })();
+  </script>
+</body>
+</html>
