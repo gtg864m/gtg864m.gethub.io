@@ -2,76 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>SAP Work Zone Launcher</title>
+  <title>Work Zone Auth Popup Test</title>
 
-  <!-- TeamsJS -->
+  <!-- TeamsJS (use your preferred version; keeping yours) -->
   <script src="https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
 
   <style>
-    body { font-family: Segoe UI, Arial, sans-serif; padding: 24px; }
-    button { padding: 12px 20px; font-size: 14px; margin-right: 10px; cursor: pointer; }
+    body { font-family: Segoe UI, Arial, sans-serif; padding: 20px; }
+    button { padding: 10px 14px; font-size: 14px; cursor: pointer; }
+    #status { margin-top: 12px; color: #333; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
   </style>
 </head>
 
 <body>
-  <h3>SAP Work Zone</h3>
+  <h3>Teams Auth Popup Test</h3>
 
-  <button onclick="launchWorkZone()">Open Work Zone</button>
-  <button onclick="signIn()">Sign in</button>
+  <p>
+    Target URL:
+    <br />
+    <code>https://lxu.workzone.cfapps.us10.hana.ondemand.com/site#workzone-home&/home</code>
+  </p>
 
-  <p id="status">Initializing…</p>
+  <button id="btn">Open Auth Popup</button>
+  <div id="status">Initializing…</div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const WORKZONE_URL =
-        "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
+    const TARGET_URL = "https://lxu.workzone.cfapps.us10.hana.ondemand.com/site#workzone-home&/home";
+    const statusEl = document.getElementById("status");
+    const btn = document.getElementById("btn");
 
-      // IMPORTANT: This should be a page YOU host (same origin as this launcher),
-      // which then redirects to IAS login and ends at auth-end.html that calls notifySuccess().
-      const AUTH_START_URL = encodeURIComponent(WORKZONE_URL);
+    const setStatus = (msg) => statusEl && (statusEl.textContent = msg);
 
-      const statusEl = document.getElementById("status");
-      const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
+    let inTeams = false;
 
-      let inTeams = false;
-
-      if (!window.microsoftTeams || !microsoftTeams.app?.initialize) {
-        setStatus("Teams SDK not loaded (browser mode).");
-      } else {
-        microsoftTeams.app.initialize()
-          .then(() => { inTeams = true; setStatus("Ready (Teams)."); })
-          .catch(() => { setStatus("Ready (browser)."); });
-      }
-
-      window.launchWorkZone = function () {
-        window.location.href = WORKZONE_URL;
-      };
-
-      window.signIn = function () {
-        if (inTeams && microsoftTeams.authentication?.authenticate) {
-          setStatus("Opening Teams auth popup…");
-
-          microsoftTeams.authentication.authenticate({
-            url: AUTH_START_URL,
-            width: 600,
-            height: 510
-          }).then((result) => {
-            setStatus("Sign-in completed. Redirecting…");
-            // Once auth is complete, go to Work Zone (or keep your existing routing logic)
-            window.location.href = WORKZONE_URL;
-          }).catch((err) => {
-            setStatus("Sign-in failed: " + (err?.message || err));
-            console.error("authenticate failed", err);
-          });
-
+    async function init() {
+      try {
+        if (!window.microsoftTeams?.app?.initialize) {
+          setStatus("Teams SDK not available (not running in Teams).");
           return;
         }
 
-        // Browser fallback
-        setStatus("Not in Teams—opening Work Zone directly…");
-        window.location.href = WORKZONE_URL;
-      };
+        // Wait for TeamsJS initialization before calling authenticate()
+        await microsoftTeams.app.initialize();
+        inTeams = true;
+        setStatus("Ready (Teams). Click the button to open popup.");
+      } catch (e) {
+        setStatus("Loaded, but not in Teams (browser mode).");
+      }
+    }
+
+    btn.addEventListener("click", async () => {
+      if (!inTeams || !microsoftTeams.authentication?.authenticate) {
+        setStatus("Not in Teams — opening target in a new tab instead…");
+        window.open(TARGET_URL, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      setStatus("Opening Teams auth popup…");
+
+      microsoftTeams.authentication.authenticate({
+        url: TARGET_URL,
+        width: 800,
+        height: 700
+      }).then((result) => {
+        // For this test URL, you likely won't hit this.
+        setStatus("Popup returned success: " + result);
+      }).catch((err) => {
+        // Expected for a raw URL that never calls notifySuccess/notifyFailure
+        setStatus("Popup closed / auth not completed (expected for this test). " +
+                  (err?.message ? ("Details: " + err.message) : ""));
+        console.log("authenticate() error (expected for raw URL test):", err);
+      });
     });
+
+    document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
