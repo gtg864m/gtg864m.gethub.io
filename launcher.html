@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" type="text/css" href="/styles/msteams-16.css"/>
-    <link rel="stylesheet" type="text/css" href="/styles/custom.css"/>
-    <script
-          src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"
-          integrity="sha384-QtTBFeFlfRDZBfwHJHYQp7MdLJ2C3sfAEB1Qpy+YblvjavBye+q87TELpTnvlXw4"
-          crossorigin="anonymous">
-    </script>
+  <meta charset="utf-8" />
+  <title>SAP Work Zone Launcher</title>
+
+  <!-- ✅ Microsoft Teams JS SDK (v2.x – CORRECT) -->
+  <script
+    src="https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.js"
+    crossorigin="anonymous">
+  </script>
 
   <style>
     body {
@@ -41,29 +42,35 @@
         "https://ao16xfgoy.accounts.ondemand.com";
 
       const statusEl = document.getElementById("status");
-      const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
+      const setStatus = (msg) => {
+        if (statusEl) statusEl.innerText = msg;
+      };
 
-      // ✅ Guard: SDK must exist
+      // ✅ Guard: SDK must be present
       if (!window.microsoftTeams || !microsoftTeams.app?.initialize) {
-        setStatus("Teams SDK not loaded.");
+        setStatus("Teams SDK not loaded (browser mode).");
         return;
       }
 
       let teamsReady = false;
 
+      // ✅ Initialize Teams (only resolves inside Teams)
       microsoftTeams.app.initialize()
         .then(() => {
           teamsReady = true;
           setStatus("Ready.");
         })
         .catch(() => {
-          setStatus("Not running inside Teams.");
+          // Expected in normal browser
+          setStatus("Not running inside Teams (browser mode).");
         });
 
+      // ✅ Open Work Zone
       window.launchWorkZone = function () {
         window.location.href = WORKZONE_URL;
       };
 
+      // ✅ Sign‑in logic (New Teams safe)
       window.signIn = function () {
 
         // Browser fallback
@@ -73,8 +80,8 @@
           return;
         }
 
-        // Teams dialog
-        if (microsoftTeams.dialog?.url?.open) {
+        // ✅ Preferred: dialog if supported
+        if (microsoftTeams.dialog?.url?.isSupported()) {
           setStatus("Opening sign‑in dialog…");
 
           microsoftTeams.dialog.url.open(
@@ -90,8 +97,11 @@
           return;
         }
 
-        setStatus("Dialog API not available.");
+        // ✅ New Teams fallback (this fixes your current error)
+        setStatus("Opening sign‑in in Teams browser…");
+        microsoftTeams.app.openLink(IAS_LOGIN_URL);
       };
+
     });
   </script>
 </body>
