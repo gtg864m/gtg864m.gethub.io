@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>SAP Work Zone Launcher</title>
 
-  <!-- TeamsJS v2.x (keep simple; add integrity later if you want) -->
+  <!-- TeamsJS -->
   <script src="https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
 
   <style>
@@ -23,31 +23,25 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-
       const WORKZONE_URL =
         "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
 
-      const IAS_LOGIN_URL =
-        "https://ao16xfgoy.accounts.ondemand.com";
+      // IMPORTANT: This should be a page YOU host (same origin as this launcher),
+      // which then redirects to IAS login and ends at auth-end.html that calls notifySuccess().
+      const AUTH_START_URL =
+        window.location.origin + "/auth-start.html?target=" + encodeURIComponent(WORKZONE_URL);
 
       const statusEl = document.getElementById("status");
       const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
 
       let inTeams = false;
 
-      // Guard: SDK loaded?
       if (!window.microsoftTeams || !microsoftTeams.app?.initialize) {
         setStatus("Teams SDK not loaded (browser mode).");
       } else {
-        // Try initialize. If it resolves, we are in Teams.
         microsoftTeams.app.initialize()
-          .then(() => {
-            inTeams = true;
-            setStatus("Ready (Teams).");
-          })
-          .catch(() => {
-            setStatus("Ready (browser).");
-          });
+          .then(() => { inTeams = true; setStatus("Ready (Teams)."); })
+          .catch(() => { setStatus("Ready (browser)."); });
       }
 
       window.launchWorkZone = function () {
@@ -55,18 +49,29 @@
       };
 
       window.signIn = function () {
-        // ✅ If in Teams, use openLink (works even when dialog APIs are unavailable)
-        if (inTeams && microsoftTeams.app?.openLink) {
-          setStatus("Opening sign-in in Teams browser…");
-          microsoftTeams.app.openLink(IAS_LOGIN_URL);
+        if (inTeams && microsoftTeams.authentication?.authenticate) {
+          setStatus("Opening Teams auth popup…");
+
+          microsoftTeams.authentication.authenticate({
+            url: AUTH_START_URL,
+            width: 600,
+            height: 510
+          }).then((result) => {
+            setStatus("Sign-in completed. Redirecting…");
+            // Once auth is complete, go to Work Zone (or keep your existing routing logic)
+            window.location.href = WORKZONE_URL;
+          }).catch((err) => {
+            setStatus("Sign-in failed: " + (err?.message || err));
+            console.error("authenticate failed", err);
+          });
+
           return;
         }
 
-        // ✅ Browser fallback
-        setStatus("Opening sign-in…");
-        window.location.href = IAS_LOGIN_URL;
+        // Browser fallback
+        setStatus("Not in Teams—opening Work Zone directly…");
+        window.location.href = WORKZONE_URL;
       };
-
     });
   </script>
 </body>
