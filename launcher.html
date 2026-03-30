@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Work Zone Launcher</title>
+  <style>
+    body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; }
+    .card { max-width: 640px; border: 1px solid #ddd; border-radius: 12px; padding: 18px; }
+    .muted { color: #666; font-size: 14px; }
+    .row { display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #888; cursor: pointer; }
+    .ok { color: #0a6; }
+    .bad { color: #b00; }
+    code { background:#f6f6f6; padding:2px 6px; border-radius:6px; }
+  </style>
+
+  <!-- Teams JS SDK (v2) -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div class="card">
+    <h2>Launching SAP Build Work Zone…</h2>
+    <div id="status" class="muted">Initializing…</div>
+
+    <div class="row">
+      <button id="btnLaunch" style="display:none;">Launch</button>
+      <button id="btnSignIn" style="display:none;">Sign in</button>
+      <span id="detail" class="muted"></span>
+    </div>
+
+    <p class="muted" style="margin-top:14px;">
+      Auth check: <code>/dynamic_dest/JAM/api/v1/OData/Groups?$format=json&$select=Name,Id</code><br/>
+      Target: <code>https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home</code>
+    </p>
+  </div>
+
+  <script>
+    const TARGET_URL = "https://lxu.launchpad.cfapps.us10.hana.ondemand.com/site/PX2#Shell-home";
+    const AUTH_CHECK_URL = `${window.location.origin}/dynamic_dest/JAM/api/v1/OData/Groups?$format=json&$select=Name,Id`;
+
+    const statusEl = document.getElementById("status");
+    const detailEl = document.getElementById("detail");
+    const btnLaunch = document.getElementById("btnLaunch");
+    const btnSignIn = document.getElementById("btnSignIn");
+
+    function setStatus(text, cls) {
+      statusEl.className = cls || "muted";
+      statusEl.textContent = text;
+    }
+    function setDetail(text) {
+      detailEl.textContent = text || "";
+    }
+
+    async function isAuthorized() {
+      const resp = await fetch(AUTH_CHECK_URL, {
+        credentials: "include",
+        headers: { "Accept": "application/json" }
+      });
+      const ct = (resp.headers.get("content-type") || "").toLowerCase();
+      return ct.includes("application/json");
+    }
+
+    function goWorkZone() {
+      setStatus("Authenticated — redirecting…", "ok");
+      window.location.replace(TARGET_URL);
+    }
+
+    async function startTeamsAuthPopup() {
+      // Uses the same authenticate flow pattern as your login/wzload React files. [1](https://l48prod-my.sharepoint.com/personal/terry_harvey_bpx_com/Documents/Microsoft%20Copilot%20Chat%20Files/login.js?web=1)[2](https://l48prod-my.sharepoint.com/personal/terry_harvey_bpx_com/Documents/Microsoft%20Copilot%20Chat%20Files/wzload.js?web=1)
+      return microsoftTeams.authentication.authenticate({
+        url: `${window.location.origin}/wzteams/auth/authstart.html`,
+        width: 600,
+        height: 535
+      });
+    }
+
+    async function init() {
+      setStatus("Initializing Teams…");
+      try {
+        await microsoftTeams.app.initialize();
+      } catch (e) {
+        // Still allow use outside Teams for debugging
+        setStatus("Teams SDK not available (browser test mode).", "bad");
+      }
+
+      btnLaunch.style.display = "inline-block";
+      btnSignIn.style.display = "inline-block";
+      btnLaunch.onclick = async () => {
+        setDetail("");
+        setStatus("Checking session…");
+        try {
+          if (await isAuthorized()) return goWorkZone();
+          setStatus("Not authenticated.", "bad");
+          setDetail("Click Sign in.");
+        } catch (e) {
+          setStatus("Auth check failed.", "bad");
+          setDetail(String(e?.message || e));
+        }
+      };
+
+      btnSignIn.onclick = async () => {
+        setDetail("");
+        setStatus("Signing in…");
+        try {
+          const result = await startTeamsAuthPopup();
+          // result is optional payload from authend.html notifySuccess
+          console.log("Auth popup result:", result);
+
+          setStatus("Re-checking session…");
+          if (await isAuthorized()) return goWorkZone();
+
+          setStatus("Still not authenticated.", "bad");
+          setDetail("Auth completed but session still not detected.");
+        } catch (e) {
+          setStatus("Sign-in cancelled/failed.", "bad");
+          setDetail(String(e?.message || e));
+        }
+      };
+
+      // Optional auto-check on load
+      try {
+        setStatus("Checking session…");
+        if (await isAuthorized()) return goWorkZone();
+        setStatus("Not authenticated.", "bad");
+        setDetail("Click Sign in.");
+      } catch (e) {
+        setStatus("Auth check failed.", "bad");
+        setDetail(String(e?.message || e));
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
