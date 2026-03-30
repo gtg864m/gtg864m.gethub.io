@@ -1,90 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Auth Start</title>
-  <style>
-    body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; }
-    .muted { color:#666; font-size:14px; }
-    .ok { color:#0a6; }
-    .bad { color:#b00; }
-    button { padding:10px 14px; border-radius:10px; border:1px solid #888; cursor:pointer; margin-right:8px; }
-    code { background:#f6f6f6; padding:2px 6px; border-radius:6px; }
-  </style>
-
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
+  <script src="https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
 </head>
-
 <body>
-  <h3>Signing you in…</h3>
-  <div id="status" class="muted">Checking authorization…</div>
-
-  <div style="margin-top:12px;">
-    <button id="btnRetry" style="display:none;">Retry</button>
-    <button id="btnFinish" style="display:none;">Finish</button>
-  </div>
-
-  <p class="muted" style="margin-top:14px;">
-    Check: <code>/dynamic_dest/JAM/api/v1/OData/Groups?$format=json&$select=Name,Id</code>
-  </p>
-
+  Redirecting…
   <script>
-    const AUTH_CHECK_URL = `${window.location.origin}/dynamic_dest/JAM/api/v1/OData/Groups?$format=json&$select=Name,Id`;
+    const DEFAULT_TARGET = "https://lxu.workzone.cfapps.us10.hana.ondemand.com/site#workzone-home&/home";
+    const AUTH_END = `${location.origin}/gtg864m/gtg864m.gethub.io/authend.html`;
 
-    const statusEl = document.getElementById("status");
-    const btnRetry = document.getElementById("btnRetry");
-    const btnFinish = document.getElementById("btnFinish");
+    const params = new URLSearchParams(location.search);
+    const step = params.get("step") || "go";
 
-    function setStatus(text, cls) {
-      statusEl.className = cls || "muted";
-      statusEl.textContent = text;
+    // Allows caller to pass a target in the query string
+    const target = params.get("target")
+      ? decodeURIComponent(params.get("target"))
+      : DEFAULT_TARGET;
+
+    // When Work Zone redirects back to us after login, we finish the popup flow
+    if (step === "done") {
+      // Initialize Teams SDK (safe even if it fails in browser testing)
+      (async () => {
+        try { await microsoftTeams.app.initialize(); } catch(e) {}
+        window.location.replace(AUTH_END);
+      })();
+    } else {
+      // First leg: go to Work Zone to trigger IAS/SSO
+      // Build a "return to me" URL (this is what Work Zone/IAS must send the browser back to)
+      const returnUrl = `${location.origin}${location.pathname}?step=done`;
+
+      // IMPORTANT:
+      // 1) If your Work Zone/IAS supports a redirect parameter, you should pass returnUrl through it.
+      // 2) Since we don't know your exact param name, we support a placeholder replacement:
+      //    If target contains "{RETURN_URL}", we will replace it.
+      //
+      // Example target passed in:
+      //   https://.../site#workzone-home&/home?someRedirectParam={RETURN_URL}
+      //
+      const finalTarget = target.includes("{RETURN_URL}")
+        ? target.replaceAll("{RETURN_URL}", encodeURIComponent(returnUrl))
+        : target;
+
+      window.location.replace(finalTarget);
     }
-
-    async function isAuthorized() {
-      const resp = await fetch(AUTH_CHECK_URL, {
-        credentials: "include",
-        headers: { "Accept": "application/json" }
-      });
-      const ct = (resp.headers.get("content-type") || "").toLowerCase();
-      return ct.includes("application/json");
-    }
-
-    async function run() {
-      btnRetry.style.display = "none";
-      btnFinish.style.display = "none";
-
-      try {
-        // Initialize Teams SDK in popup (safe even outside Teams)
-        try { await microsoftTeams.app.initialize(); } catch (_) {}
-
-        setStatus("Checking authorization…");
-        const ok = await isAuthorized();
-
-        if (ok) {
-          setStatus("Authorized — completing…", "ok");
-          // Go to static auth end page which will notifySuccess() and close the popup
-          window.location.replace("/gtg864m.gethub.io/authend.html");
-          return;
-        }
-
-        // Static-only limitation: we can’t force IAS login without a server-driven redirect loop.
-        // So we give the user a retry loop (after they authenticate in the redirect that may have happened).
-        setStatus("Not authorized yet. If a login prompt appeared, complete it, then click Retry.", "bad");
-        btnRetry.style.display = "inline-block";
-        btnFinish.style.display = "inline-block";
-      } catch (e) {
-        setStatus("Auth check error: " + (e?.message || e), "bad");
-        btnRetry.style.display = "inline-block";
-      }
-    }
-
-    btnRetry.onclick = run;
-
-    // “Finish” attempts to complete anyway (useful if session is set but fetch is blocked)
-    btnFinish.onclick = () => window.location.replace("/gtg864m.gethub.io/authend.html");
-
-    run();
   </script>
 </body>
 </html>
