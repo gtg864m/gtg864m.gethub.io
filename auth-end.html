@@ -1,20 +1,34 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Auth Complete</title>
-  https://res.cdn.office.net/teams-js/2.2.0/js/MicrosoftTeams.min.jsscript>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Auth End</title>
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js" crossorigin="anonymous"></script>
 </head>
-<body>
+
+<body style="font-family: Segoe UI, Arial, sans-serif; padding: 16px;">
   Completing sign-in…
+
   <script>
     (async () => {
       try {
         await microsoftTeams.app.initialize();
-        // Send anything useful back to the parent if you want (or just "ok")
-        microsoftTeams.authentication.notifySuccess("ok");
+
+        // Return an optional payload string to the caller (.then(result => ...))
+        const payload = JSON.stringify({
+          status: "success",
+          ts: new Date().toISOString()
+        });
+
+        microsoftTeams.authentication.notifySuccess(payload);
       } catch (e) {
-        microsoftTeams.authentication.notifyFailure(e?.message || "Auth failed");
+        microsoftTeams.authentication.notifyFailure(
+          JSON.stringify({
+            status: "failure",
+            message: (e && e.message) ? e.message : String(e)
+          })
+        );
       }
     })();
   </script>
