@@ -70,7 +70,7 @@
     async function startTeamsAuthPopup() {
       // Uses the same authenticate flow pattern as your login/wzload React files. [1](https://l48prod-my.sharepoint.com/personal/terry_harvey_bpx_com/Documents/Microsoft%20Copilot%20Chat%20Files/login.js?web=1)[2](https://l48prod-my.sharepoint.com/personal/terry_harvey_bpx_com/Documents/Microsoft%20Copilot%20Chat%20Files/wzload.js?web=1)
       return microsoftTeams.authentication.authenticate({
-        url: `${window.location.origin}/wzteams/auth/authstart.html`,
+        url: `${window.location.origin}/auth/authstart.html`,
         width: 600,
         height: 535
       });
